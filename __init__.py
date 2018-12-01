@@ -33,7 +33,7 @@ class MQTTThread (threading.Thread):
 
         if self.username != "username" and self.password != "password":
             self.client.username_pw_set(self.username, self.password)
-        
+
         if self.tls.lower() == 'true':
             self.client.tls_set_context(context=None)
 
@@ -43,20 +43,21 @@ class MQTTThread (threading.Thread):
 @cbpi.actor
 class MQTTActor(ActorBase):
     topic = Property.Text("Topic", configurable=True, default_value="", description="MQTT TOPIC")
-	pPower = 0
-    def on(self, power=100):
-        self.api.cache["mqtt"].client.publish(self.topic, payload=json.dumps({"state": "on", "power": power}), qos=2, retain=True)
+    pPower = 100
 
-    def off(self):
-        self.api.cache["mqtt"].client.publish(self.topic, payload=json.dumps({"state": "off"}), qos=2, retain=True)
-	
-	def set_power(self, power):
+    def on(self, power):
         if power is not None:
             if power != self.pPower:
                 power = min(100,power)
                 power = max(0,power)
                 self.pPower = int(power)
-			self.on()	
+        self.api.cache["mqtt"].client.publish(self.topic, payload=json.dumps({"state": "on", "power": self.pPower}), qos=2, retain=True)
+
+    def off(self):
+        self.api.cache["mqtt"].client.publish(self.topic, payload=json.dumps({"state": "off"}), qos=2, retain=True)
+
+    def set_power(self, power):
+            self.on(power)
 
 @cbpi.actor
 class ESPEasyMQTT(ActorBase):
@@ -84,9 +85,9 @@ class MQTT_SENSOR(SensorActive):
 
         SensorActive.init(self)
         def on_message(client, userdata, msg):
-            
+
             try:
-                print "payload " + msg.payload        
+                print "payload " + msg.payload
                 json_data = json.loads(msg.payload)
                 #print json_data
                 val = json_data
@@ -116,7 +117,7 @@ class MQTT_SENSOR(SensorActive):
     def execute(self):
         '''
         Active sensor has to handle his own loop
-        :return: 
+        :return:
         '''
         self.sleep(5)
 
@@ -148,7 +149,7 @@ class MQTTActor_Compressor(ActorBase):
             self.compressor_wait = datetime.utcnow() + timedelta(minutes=int(self.delay))
         self.delayed = False
         self.api.cache["mqtt"].client.publish(self.topic, payload=json.dumps({"state": "off"}), qos=2, retain=True)
-		
+
 @cbpi.initalizer(order=0)
 def initMQTT(app):
 
@@ -180,7 +181,7 @@ def initMQTT(app):
     app.cache["mqtt"] = MQTTThread(server,port,username, password, tls)
     app.cache["mqtt"].daemon = True
     app.cache["mqtt"].start()
-    
+
     def mqtt_reader(api):
         while True:
             try:
@@ -191,11 +192,9 @@ def initMQTT(app):
                 pass
 
     cbpi.socketio.start_background_task(target=mqtt_reader, api=app)
-	
+
 @cbpi.backgroundtask(key="update_MQTTActor_compressors", interval=5)
 def update_MQTTActor_compressors(api):
     for compressor in cbpi.MQTTActor_Compressors:
         if compressor.delayed and datetime.utcnow() >= compressor.compressor_wait:
-            compressor.on()	
-
-
+            compressor.on()
