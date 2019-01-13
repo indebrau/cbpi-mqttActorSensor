@@ -71,10 +71,10 @@ class ESPEasyMQTT(ActorBase):
 @cbpi.sensor
 class MQTT_SENSOR(SensorActive):
     a_topic = Property.Text("Topic", configurable=True, default_value="", description="MQTT TOPIC")
-    b_payload = Property.Text("Payload Dictioanry", configurable=True, default_value="", description="Where to find msg in payload, leave blank for raw payload")
+    b_payload = Property.Text("Payload Dictioanry", configurable=True, default_value="", description="Where to find msg in patload, leave blank for raw payload")
     c_unit = Property.Text("Unit", configurable=True, default_value="", description="Units to display")
     d_offset = Property.Number("Offset", configurable=True, default_value="0", description="Offset relative to sensor data")
-
+	
     last_value = None
     def init(self):
         self.topic = self.a_topic
@@ -106,7 +106,11 @@ class MQTT_SENSOR(SensorActive):
 
 
     def get_value(self):
-        return {"value": self.last_value + float(self.d_offset), "unit": self.unit}
+        try:
+            self.last_value += float(self.d_offset)
+        except Exception as e:
+                pass
+        return {"value": self.last_value, "unit": self.unit}
 
     def get_unit(self):
         return self.unit
