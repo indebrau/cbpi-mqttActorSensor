@@ -107,7 +107,7 @@ class MQTT_SENSOR(SensorActive):
 
     def get_value(self):
         try:
-            self.last_value += float(self.d_offset)
+            self.last_value = round(self.last_value + float(self.d_offset), 2)
         except Exception as e:
                 pass
         return {"value": self.last_value, "unit": self.unit}
