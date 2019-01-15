@@ -74,9 +74,9 @@ class MQTT_SENSOR(SensorActive):
     b_payload = Property.Text("Payload Dictioanry", configurable=True, default_value="", description="Where to find msg in payload, leave blank for raw payload")
     c_unit = Property.Text("Unit", configurable=True, default_value="", description="Units to display")
     d_offset = Property.Number("Offset", configurable=True, default_value="0", description="Offset relative to sensor data")
-
+    
     last_value = None
-	send_value = 0
+    send_value = 0
     def init(self):
         self.topic = self.a_topic
         if self.b_payload == "":
@@ -112,7 +112,7 @@ class MQTT_SENSOR(SensorActive):
         except Exception as e:
                 pass
         return {"value": self.send_value, "unit": self.unit}
-		
+
     def get_unit(self):
         return self.unit
 
