@@ -114,7 +114,6 @@ class MQTT_SENSOR(SensorActive):
         def on_message(client, userdata, msg):
 
             try:
-                print "payload " + msg.payload
                 json_data = json.loads(msg.payload)
                 # print json_data
                 val = json_data
