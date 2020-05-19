@@ -45,7 +45,10 @@ class MQTTThread (threading.Thread):
         if self.tls.lower() == 'true':
             self.client.tls_set_context(context=None)
 
-        self.client.connect(str(self.server), int(self.port), 60)
+        try:
+            self.client.connect(str(self.server), int(self.port), 60)
+        except Exception as e:
+            print "Error connecting to MQTT server ("+ str(e)+"), will keep trying.."
         self.client.loop_forever()
 
 
