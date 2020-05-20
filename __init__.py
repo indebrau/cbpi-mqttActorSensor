@@ -156,7 +156,7 @@ class MQTTActor_Compressor(ActorBase):
         if datetime.utcnow() >= self.compressor_wait:
             self.compressor_on = True
             self.api.cache["mqtt"].client.publish(self.topic, payload=json.dumps(
-                {"on": true, "power": 100}), qos=2, retain=True)
+                {"on": True, "power": 100}), qos=2, retain=True)
             self.delayed = False
         else:
             cbpi.app.logger.info("Delaying Turing on Compressor")
@@ -168,7 +168,7 @@ class MQTTActor_Compressor(ActorBase):
             self.compressor_wait = datetime.utcnow() + timedelta(minutes=int(self.delay))
         self.delayed = False
         self.api.cache["mqtt"].client.publish(
-            self.topic, payload=json.dumps({"on": false}), qos=2, retain=True)
+            self.topic, payload=json.dumps({"on": False}), qos=2, retain=True)
 
 
 @cbpi.initalizer(order=0)
