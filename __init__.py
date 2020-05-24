@@ -58,6 +58,11 @@ class MQTTActor(ActorBase):
                           default_value="", description="MQTT Topic")
     pPower = 100
 
+    def init(self):
+        super(MQTTActor, self).init()
+        print "Initially setting MQTT Actor to off.."
+        self.off()
+
     def on(self, power):
         if power is not None:
             if power != self.pPower:
@@ -73,6 +78,41 @@ class MQTTActor(ActorBase):
 
     def set_power(self, power):
         self.on(power)
+
+
+@cbpi.actor
+class MQTTActor_Compressor(ActorBase):
+    topic = Property.Text("Topic", configurable=True,
+                          default_value="", description="MQTT TOPIC")
+    delay = Property.Number(
+        "Compressor Delay", configurable=True, default_value=10, description="minutes")
+    compressor_on = False
+    compressor_wait = datetime.utcnow()
+    delayed = False
+
+    def init(self):
+        super(MQTTActor_Compressor, self).init()
+        cbpi.MQTTActor_Compressors += [self]
+        print "Initially setting MQTT Actor Compressor to off.."
+        self.off()
+
+    def on(self, power=100):
+        if datetime.utcnow() >= self.compressor_wait:
+            self.compressor_on = True
+            self.api.cache["mqtt"].client.publish(self.topic, payload=json.dumps(
+                {"on": True, "power": 100}), qos=2, retain=True)
+            self.delayed = False
+        else:
+            cbpi.app.logger.info("Delaying Turing on Compressor")
+            self.delayed = True
+
+    def off(self):
+        if self.compressor_on:
+            self.compressor_on = False
+            self.compressor_wait = datetime.utcnow() + timedelta(minutes=int(self.delay))
+        self.delayed = False
+        self.api.cache["mqtt"].client.publish(
+            self.topic, payload=json.dumps({"on": False}), qos=2, retain=True)
 
 
 @cbpi.sensor
@@ -136,39 +176,6 @@ class MQTT_SENSOR(SensorActive):
         :return:
         '''
         self.sleep(5)
-
-
-@cbpi.actor
-class MQTTActor_Compressor(ActorBase):
-    topic = Property.Text("Topic", configurable=True,
-                          default_value="", description="MQTT TOPIC")
-    delay = Property.Number(
-        "Compressor Delay", configurable=True, default_value=10, description="minutes")
-    compressor_on = False
-    compressor_wait = datetime.utcnow()
-    delayed = False
-
-    def init(self):
-        super(MQTTActor_Compressor, self).init()
-        cbpi.MQTTActor_Compressors += [self]
-
-    def on(self, power=100):
-        if datetime.utcnow() >= self.compressor_wait:
-            self.compressor_on = True
-            self.api.cache["mqtt"].client.publish(self.topic, payload=json.dumps(
-                {"on": True, "power": 100}), qos=2, retain=True)
-            self.delayed = False
-        else:
-            cbpi.app.logger.info("Delaying Turing on Compressor")
-            self.delayed = True
-
-    def off(self):
-        if self.compressor_on:
-            self.compressor_on = False
-            self.compressor_wait = datetime.utcnow() + timedelta(minutes=int(self.delay))
-        self.delayed = False
-        self.api.cache["mqtt"].client.publish(
-            self.topic, payload=json.dumps({"on": False}), qos=2, retain=True)
 
 
 @cbpi.initalizer(order=0)
